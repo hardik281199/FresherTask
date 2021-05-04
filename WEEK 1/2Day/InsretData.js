@@ -4,24 +4,28 @@ const rl = readline.createInterface({
     output: process.stdout
 });
 
-var arrData = new Array(10000).fill({
-    "number": 0
+var i = 0;
+var arrData = [...Array(10000)].map(() => {
+    i+=1;
+    return {
+        number: Math.floor(Math.random() * i)
+    }
 });
 
 let update=1;
 let del=2;
-
+let start;
 /**
  * 
  */
 rl.question('What is update (1) ya delete(2) \n',(user)=>{
-    console.log(user.trim());
+    start = Date.now();
     if(user.trim() == update)
     {
         rl.question('enter posision and enter data \n',(position)=>{
             rl.question(`Update position ${position} with number value ? \n`, (numData) => {
                 arrData[position] = {
-                    "number": numData 
+                    "number": parseInt(numData, 10)
                 };
                 console.log(arrData[position]);
                 rl.close();
@@ -40,10 +44,11 @@ rl.question('What is update (1) ya delete(2) \n',(user)=>{
     } 
     else {
         rl.close();
-        
     }
 });
 
 rl.on("close", function() {
     console.log(arrData);
+    console.log(`Time taken by current operation ${Math.floor((Date.now() - start) / 1000)} second or ${Date.now() - start} millisecond.`);
+    
 });
