@@ -72,10 +72,6 @@ class Matric{
         var fp = this.subMatrices[0];
         var firstPoint = fp[0];
         console.log(firstPoint);
-        // var final = [];
-        // var key = 0;
-        // var stat = false;
-        // var map = new Map();
         var rowsSub = this.subMatrices.length;
         var colsSub = this.subMatrices[0].length;
         for(var i = 0 ;i < this.rows; i++ ){
@@ -89,7 +85,6 @@ class Matric{
                     // same j
                       var fs = this.matrices[m];
                       for(var k = 0;k<rowsSub;k++){
-                        // for(var l = 0;l<colsSub;l++){
                           var fk = this.subMatrices[k];
                           if(k==0){
                             continue;
@@ -100,7 +95,6 @@ class Matric{
                             continue;
                           }
                         }
-                      // }
                   }
                   for(var n = 0; n<this.cols;n++){
                     var as = this.matrices[i]; //same i
