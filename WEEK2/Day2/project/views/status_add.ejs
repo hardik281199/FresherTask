@@ -1,0 +1,19 @@
+<%- include("./admin") %>
+
+<div class="container">
+    <h2>Status</h2>
+    <form action="/saveStatus" method="post">
+        <input type="hidden" value="<%= user.id %>" name="id">
+      <div class="form-group">
+        <select class="form-select" aria-label="Default select example" name="status">
+            <option selected>Open this select menu</option>
+            <option value="true">true</option>
+            <option value="false">false</option>
+            
+          </select>
+      </div>
+      
+      <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+  </div>
+   
