@@ -61,13 +61,48 @@
               </tr>
           <% }); %>
       </tbody>
+      
+      
     </table>
-  
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container-fluid">
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+          <% if (pages > 0) { %>
+            <ul class="navbar-nav">
+                <% if (current == 1) { %>
+                    <li class="disabled nav-item"><a class="nav-link disabled">First</a></li>
+                <% } else { %>
+                    <li><a class="nav-link "href="/index?page=1">First</a></li>
+                <% } %>
+                <% var i = (Number(current) > 5 ? Number(current) - 4 : 1) %>
+                <% if (i !== 1) { %>
+                    <li class="disabled nav-item"><a class="nav-link disabled">...</a></li>
+                <% } %>
+                <% for (; i <= (Number(current) + 4) && i <= pages; i++) { %>
+                    <% if (i == current) { %>
+                        <li class="active nav-item"><a class="nav-link active"><%= i %></a></li>
+                    <% } else { %>
+                        <li><a class="nav-link " href="/index?page=<%= i %>"><%= i %></a></li>
+                    <% } %>
+                    <% if (i == Number(current) + 4 && i < pages) { %>
+                        <li class="disabled nav-item"><a class="nav-link disabled">...</a></li>
+                    <% } %>
+                <% } %>
+                <% if (current == pages) { %>
+                    <li class="disabled nav-item"><a class="nav-link disabled">Last</a></li>
+                <% } else { %>
+                    <li class="nav-item"><a class="nav-link" href="/index?page=<%= pages %>">Last</a></li>
+                <% } %>
+            </ul>
+          <% } %>
+      </div>
+    </div>
+  </nav>
     <script>
       $("#employee-search-button").click(function(){
         var str = $("#employee-search-input").val();
 
-        var url = '/list?userName='+str;
+        var url = '/index?userName='+str;
         window.location.href = url;
         
       });

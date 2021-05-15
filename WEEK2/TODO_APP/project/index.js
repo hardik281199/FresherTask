@@ -2,10 +2,13 @@ const mysql =require('mysql');
 const express = require('express');
 const path = require('path');
 const ejs = require('ejs');
+const {check, validationResult} = require('express-validator');
 var app = express();
 const bodyParser = require('body-parser');
 const session = require('express-session');
 var flash = require('express-flash');
+const { get } = require('http');
+const { count } = require('console');
 
 /**
  * connection to my sql database
@@ -176,64 +179,53 @@ const render = (fileName, content, req, res) => {
 /**
  * all employee data
  */
-app.get('/list',(req, res) => {
-    console.log(req.query);
+
+const middleware = (req, res, next) => {
+    // req.body
+    return next();
+}
+
+app.get('/index',(req,res)=>{
+
     if (req.session.loggedin && req.session.role == 'ADMIN'){
-        let sql = "SELECT * FROM employee";
-        if(req.query.userName) {
-            sql = `${sql} where lower(emp_name) like lower(?)`
-        }
-        console.log(sql);
-        mysqlConn.query(sql, [`%${req.query.userName}%`], (err, rows) => {
-            if(err) throw err;
-            render('user_index', {
-                title : 'CRUD Operation using NodeJS'+' '+ formatAMPM(),
-                employee : rows
-                
-            },req,res);
-        });
-    } else {
-		res.redirect('/login');
-	}
-	// res.end();
-    
-});
+        let perPage = 3;
+        const page = parseInt(req.query.page) || 1;
+        console.log(page + "  pages  ");
+        let offset = (page - 1) * perPage;
+        console.log(offset +   "  offset");
+        mysqlConn.query('SELECT COUNT(id) as totalCount FROM employee',(err,data)=>{
 
-// app.get('/search/:str',(req,res) =>{
-//     console.log(req.session);
-//     if (req.session.loggedin && req.session.role == 'ADMIN'){
-//         // console.log(req.params.str);
-//         let data = req.params.str;
-//         let sql = "SELECT * FROM employee where lower(emp_name) like lower(?)"
-//         mysqlConn.query(sql,[`%${data}%`],(err, result) =>{
+            console.log(data[0].totalCount);
+            let employeeQuery = "select * from employee "; 
+            const paginateQuery = `limit ${perPage} OFFSET ${offset}`;
+            let payLoad = [`%${req.query.userName}%`];
 
-//             if(err) {
-//                 console.error('error running query', err);
-//                 res.status(500).send("Error running query")
-//             }
-//             if (result.length > 0) {
-//                 render('user_index', {
-//                     title : 'CRUD Operation using NodeJS'+' '+ formatAMPM(),
-//                     employee: result
-//                 },req,res);
-//             } else {
-//                 // see comments below this line..
+            if(req.query.userName) {
+                employeeQuery = employeeQuery + `where lower(emp_name) like lower(?)` + paginateQuery;
+            } else {
+                employeeQuery = employeeQuery + paginateQuery;
+            }
+
+            mysqlConn.query(employeeQuery,payLoad,(err,result) =>{
                 
-//                 let sql = "SELECT * FROM employee";
-//                 let query = mysqlConn.query(sql, (err, rows) => {
-//                 if(err) throw err;
-//                 render('user_index', {
-//                     title : 'CRUD Operation using NodeJS'+' '+ formatAMPM(),
-//                     employee : rows
+                if(err) throw err;
+                render('user_index', {
+                    title : 'CRUD Operation using NodeJS'+' '+ formatAMPM(),
+                    employee : result,
+                    current: page,
+                    pages: Math.ceil(data[0].totalCount / perPage)
                     
-//                 },req,res);
-//         });
-//             }
-//         })
-//     }
+                },req,res);
+            });
+            
 
+        })
+        
+    }else{
+        res.redirect('/login');
+    }
 
-// })
+})
 
 
 /**
@@ -254,14 +246,22 @@ app.get('/add',(req, res) => {
 /**
  * save employee data
  */
-app.post('/save',(req, res) => {
-    let data = {emp_name: req.body.name, emp_salary: req.body.salary,emp_city: req.body.city};
-    let sql = "INSERT INTO employee SET ?";
-    let query = mysqlConn.query(sql, data,(err, results) => {
-        if(err) throw err;
-        req.flash('success','Your are successfully add data');
+app.post('/save',check('text').not().isEmpty().trim().escape(),(req, res) => {
+    const errors = validationResult(req);
+    console.log(req.body);
+    if (!errors.isEmpty()) {
+        req.flash('error','please do not excpet null value');
         res.redirect('/add');
-    });
+      } else {
+        let data = {emp_name: req.body.name, emp_salary: req.body.salary,emp_city: req.body.city};
+        let sql = "INSERT INTO employee SET ?";
+        let query = mysqlConn.query(sql, data,(err, results) => {
+            if(err) throw err;
+            req.flash('success','Your are successfully add data');
+            res.redirect('/add');
+        });
+      }
+    
 });
  
 /**
@@ -288,13 +288,21 @@ app.get('/edit/:id',(req, res) => {
  /**
  * update employee
  */
-app.post('/update',(req, res) => {
-    const eId = req.body.id;
-    let sql = "update employee SET emp_name='"+req.body.name+"',  emp_salary='"+req.body.salary+"',  emp_city='"+req.body.city+"' where id ="+eId;
-    let query = mysqlConn.query(sql,(err, results) => {
-      if(err) throw err;
-      res.redirect('/list');
-    });
+app.post('/update',check('text').not().isEmpty().trim().escape(),(req, res) => {
+    const errors = validationResult(req);
+    console.log(req.body);
+    if (!errors.isEmpty()) {
+        req.flash('error','please do not excpet null value');
+        res.redirect('/index');
+    } else {
+        const eId = req.body.id;
+        let sql = "update employee SET emp_name='"+req.body.name+"',  emp_salary='"+req.body.salary+"',  emp_city='"+req.body.city+"' where id ="+eId;
+        let query = mysqlConn.query(sql,(err, results) => {
+        if(err) throw err;
+        res.redirect('/index');
+        });
+    }
+    
 });
  
  
@@ -307,7 +315,7 @@ app.get('/delete/:id',(req, res) => {
         let sql = `DELETE from employee where id = ${eId}`;
         let query = mysqlConn.query(sql,(err, result) => {
             if(err) throw err;
-            res.redirect('/');
+            res.redirect('/index');
         });
     }else {
 		res.redirect('/login');
