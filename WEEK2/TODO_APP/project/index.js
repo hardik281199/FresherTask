@@ -101,14 +101,16 @@ app.post('/auth', function(req, res) {
                             req.session.username = username;
                             req.session.role = role;
                             req.flash('success', 'Logged In Successfully')
+                            console.log(req.session);
                             res.redirect('/admin');
+                            
                         } else if (role === 'USER' && status === 'true'){
                             req.session.loggedin = true;
                             req.session.username = username;
                             req.session.role = role;
                             
                             req.flash('success', 'Logged In Successfully')
-                            res.redirect('/');
+                            res.redirect('/add');
                         }
                         else{
                             req.flash('error', 'you are not login this web sit');
@@ -163,19 +165,32 @@ app.post('/register',(req,res) => {
     
 });
 
+
+const render = (fileName, content, req, res) => {
+    console.log(req.session);
+    res.render(fileName, {
+        ...content,
+        role: req.session.role
+    });
+}
 /**
  * all employee data
  */
-app.get('/',(req, res) => {
-    
-    if (req.session.loggedin && req.session.role == 'USER'){
+app.get('/list',(req, res) => {
+    console.log(req.query);
+    if (req.session.loggedin && req.session.role == 'ADMIN'){
         let sql = "SELECT * FROM employee";
-        let query = mysqlConn.query(sql, (err, rows) => {
+        if(req.query.userName) {
+            sql = `${sql} where lower(emp_name) like lower(?)`
+        }
+        console.log(sql);
+        mysqlConn.query(sql, [`%${req.query.userName}%`], (err, rows) => {
             if(err) throw err;
-            res.render('user_index', {
+            render('user_index', {
                 title : 'CRUD Operation using NodeJS'+' '+ formatAMPM(),
                 employee : rows
-            });
+                
+            },req,res);
         });
     } else {
 		res.redirect('/login');
@@ -184,15 +199,51 @@ app.get('/',(req, res) => {
     
 });
 
+// app.get('/search/:str',(req,res) =>{
+//     console.log(req.session);
+//     if (req.session.loggedin && req.session.role == 'ADMIN'){
+//         // console.log(req.params.str);
+//         let data = req.params.str;
+//         let sql = "SELECT * FROM employee where lower(emp_name) like lower(?)"
+//         mysqlConn.query(sql,[`%${data}%`],(err, result) =>{
+
+//             if(err) {
+//                 console.error('error running query', err);
+//                 res.status(500).send("Error running query")
+//             }
+//             if (result.length > 0) {
+//                 render('user_index', {
+//                     title : 'CRUD Operation using NodeJS'+' '+ formatAMPM(),
+//                     employee: result
+//                 },req,res);
+//             } else {
+//                 // see comments below this line..
+                
+//                 let sql = "SELECT * FROM employee";
+//                 let query = mysqlConn.query(sql, (err, rows) => {
+//                 if(err) throw err;
+//                 render('user_index', {
+//                     title : 'CRUD Operation using NodeJS'+' '+ formatAMPM(),
+//                     employee : rows
+                    
+//                 },req,res);
+//         });
+//             }
+//         })
+//     }
+
+
+// })
+
 
 /**
  * add employee data
  */
 app.get('/add',(req, res) => {
     if (req.session.loggedin && req.session.role == 'USER'){
-        res.render('user_add', {
+        render('user_add', {
             title : 'CRUD Operation using NodeJS'+' '+ formatAMPM(),
-        });
+        },req,res);
     }
     else {
 		res.redirect('/login');
@@ -208,7 +259,8 @@ app.post('/save',(req, res) => {
     let sql = "INSERT INTO employee SET ?";
     let query = mysqlConn.query(sql, data,(err, results) => {
         if(err) throw err;
-        res.redirect('/');
+        req.flash('success','Your are successfully add data');
+        res.redirect('/add');
     });
 });
  
@@ -216,15 +268,15 @@ app.post('/save',(req, res) => {
  * edit employee item
  */
 app.get('/edit/:id',(req, res) => {
-    if (req.session.loggedin && req.session.role == 'USER'){
+    if (req.session.loggedin && req.session.role == 'ADMIN'){
         const eId = req.params.id;
         let sql = `Select * from employee where id = ${eId}`;
         let query = mysqlConn.query(sql,(err, result) => {
             if(err) throw err;
-            res.render('user_edit', {
+            render('user_edit', {
                 title : 'CRUD Operation using NodeJS / ExpressJS / MySQL',
                 employee : result[0]
-            });
+            },req,res);
         });
     }else {
 		res.redirect('/login');
@@ -241,7 +293,7 @@ app.post('/update',(req, res) => {
     let sql = "update employee SET emp_name='"+req.body.name+"',  emp_salary='"+req.body.salary+"',  emp_city='"+req.body.city+"' where id ="+eId;
     let query = mysqlConn.query(sql,(err, results) => {
       if(err) throw err;
-      res.redirect('/');
+      res.redirect('/list');
     });
 });
  
@@ -250,7 +302,7 @@ app.post('/update',(req, res) => {
  * delete employee
  */
 app.get('/delete/:id',(req, res) => {
-    if (req.session.loggedin && req.session.role == 'USER'){
+    if (req.session.loggedin && req.session.role == 'ADMIN'){
         const eId = req.params.id;
         let sql = `DELETE from employee where id = ${eId}`;
         let query = mysqlConn.query(sql,(err, result) => {
@@ -278,7 +330,9 @@ app.get('/logOut',(req,res) =>{
  * 
  */
 app.get('/admin',(req, res) => {
-    res.render('admin');
+    render('admin',{
+        title : 'CRUD Operation using NodeJS'+' '+ formatAMPM(),
+    },req,res);
 });
 
 /** all logdin user */
@@ -289,10 +343,10 @@ app.get('/loginUser',(req,res) =>{
         let sql = "SELECT * FROM user";
         let query = mysqlConn.query(sql, (err, rows) => {
             if(err) throw err;
-            res.render('loginUser', {
+            render('loginUser', {
                 title : 'CRUD Operation using NodeJS'+' '+ formatAMPM(),
                 user : rows
-            });
+            },req,res);
         });
     } else {
 		res.redirect('/login');
@@ -309,9 +363,10 @@ app.get('/statusUpdate/:id',(req,res)=>{
         mysqlConn.query(sql,(err, result) => {
             console.log(result);
             if(err) throw err;
-            res.render('status_add', {
+            render('status_add', {
+                title : 'CRUD Operation using NodeJS'+' '+ formatAMPM(),
                 user : result[0]
-            });
+            },req,res);
         });
     }
     else {

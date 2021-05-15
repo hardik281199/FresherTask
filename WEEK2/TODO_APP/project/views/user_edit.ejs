@@ -1,0 +1,34 @@
+<%- include("./partials/header") %>
+ 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <div class="container">
+    <h2><%= title %></h2>
+    <form action="/update" method="post">
+      <input type="hidden" value="<%= employee.id %>" name="id">
+      <div class="form-group">
+        <label for="name">emp_Name:</label>
+        <input type="text" class="form-control" id="name" placeholder="Enter Name" value="<%= employee.emp_name%>" name="name" required>
+      </div>
+      <div class="form-group">
+        <label for="email">emp_Salary:</label>
+        <input type="number" class="form-control" id="salary" placeholder="Enter salary" value="<%= employee.emp_salary %>" name="salary" required>
+      </div>
+      <div class="form-group">
+        <label for="phone">emp_City:</label>
+        <input type="text" class="form-control" id="city" placeholder="Enter city" value="<%= employee.emp_city %>" name="city" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+  </div>
+</body>
+</html>
+ 
+<%- include("./partials/footer") %>
