@@ -246,13 +246,11 @@ app.get('/add',(req, res) => {
 /**
  * save employee data
  */
-app.post('/save',check('text').not().isEmpty().trim().escape(),(req, res) => {
+app.post('/save',check('form-group').notEmpty()
+                ,(req, res) => {
     const errors = validationResult(req);
-    console.log(req.body);
-    if (!errors.isEmpty()) {
-        req.flash('error','please do not excpet null value');
-        res.redirect('/add');
-      } else {
+    console.log(errors.mapped() +"helloooooooooo");
+    if (errors.isEmpty()) {
         let data = {emp_name: req.body.name, emp_salary: req.body.salary,emp_city: req.body.city};
         let sql = "INSERT INTO employee SET ?";
         let query = mysqlConn.query(sql, data,(err, results) => {
@@ -260,6 +258,10 @@ app.post('/save',check('text').not().isEmpty().trim().escape(),(req, res) => {
             req.flash('success','Your are successfully add data');
             res.redirect('/add');
         });
+        
+    } else {
+        req.flash('error','please do not excpet null value');
+        res.redirect('/add');
       }
     
 });
