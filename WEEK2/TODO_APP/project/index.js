@@ -30,7 +30,7 @@ mysqlConn.connect((err)=>{
     }
 }); 
 
-app.listen(3000,()=> console.log('Exapress server is runing at port no :3000'));
+app.listen(3001,()=> console.log('Exapress server is runing at port no :3000'));
 
 function formatAMPM(){
     var today = new Date();
@@ -77,54 +77,58 @@ app.post('/auth', function(req, res) {
 	var username = req.body.username;
 	var password = req.body.password;
 	if (username && password) {
-		mysqlConn.query('SELECT * FROM user WHERE email = ? AND password = ?', [username, password], function(err,rows) {
+        
+            mysqlConn.query('SELECT * FROM user WHERE email = ? AND password = ?', [username, password], function(err,rows) {
 			
-            if (rows.length <= 0) {
-                req.flash('error', 'Please correct enter email and Password!')
-                res.redirect('/login')
-            }
-            else { 
-                console.log(rows[0].id);
-                // req.session.loggedin = true;
-                // req.session.username = username;
-                // req.flash('success', 'Logged In Successfully')
-                  
-                mysqlConn.query('SELECT * from user_role ur inner join user u on u.id = ur.user_id and ur.user_id = ? inner join role r on r.id = ur.role_id',[rows[0].id] ,function(err,inputs){
-                    
-                    if(inputs.length <= 0) {
-                        req.flash('error', 'No role assigned to this user, contact administration')
-                        res.redirect('/login');
-                    } else {
-                        var role = inputs[0].role;
-                        // console.log(role, "Role Name");
-                        // console.log(inputs[0].status, "status");
-                        var status = inputs[0].status;
-                        if (role === 'ADMIN' && status === 'true') { 
-                            req.session.loggedin = true;
-                            req.session.username = username;
-                            req.session.role = role;
-                            req.flash('success', 'Logged In Successfully')
-                            console.log(req.session);
-                            res.redirect('/admin');
-                            
-                        } else if (role === 'USER' && status === 'true'){
-                            req.session.loggedin = true;
-                            req.session.username = username;
-                            req.session.role = role;
-                            
-                            req.flash('success', 'Logged In Successfully')
-                            res.redirect('/add');
-                        }
-                        else{
-                            req.flash('error', 'you are not login this web sit');
+                if (rows.length <= 0) {
+                    req.flash('error', 'Please correct enter email and Password!')
+                    res.redirect('/login')
+                }
+                else { 
+                    console.log(rows[0].id);
+                    // req.session.loggedin = true;
+                    // req.session.username = username;
+                    // req.flash('success', 'Logged In Successfully')
+                      
+                    mysqlConn.query('SELECT * from user_role ur inner join user u on u.id = ur.user_id and ur.user_id = ? inner join role r on r.id = ur.role_id',[rows[0].id] ,function(err,inputs){
+                        
+                        if(inputs.length <= 0) {
+                            req.flash('error', 'No role assigned to this user, contact administration')
                             res.redirect('/login');
+                        } else {
+                            var role = inputs[0].role;
+                            // console.log(role, "Role Name");
+                            // console.log(inputs[0].status, "status");
+                            var status = inputs[0].status;
+                            if (role === 'ADMIN' && status === 'true') { 
+                                req.session.loggedin = true;
+                                req.session.username = username;
+                                req.session.role = role;
+                                req.session.userId = rows[0].id;
+                                req.flash('success', 'Logged In Successfully')
+                                console.log(req.session);
+                                res.redirect('/admin');
+                                
+                            } else if (role === 'USER' && status === 'true'){
+                                req.session.loggedin = true;
+                                req.session.username = username;
+                                req.session.userId = rows[0].id;
+                                req.session.role = role;
+                                
+                                req.flash('success', 'Logged In Successfully')
+                                res.redirect('/add');
+                            }
+                            else{
+                                req.flash('error', 'you are not login this web sit');
+                                res.redirect('/login');
+                            }
                         }
-                    }
-
-                })
-                
-            }            
-		});
+    
+                    })
+                    
+                }            
+            });
+        
 	} else {
         req.flash('error', 'Please provide username and password')
         res.redirect("/login");
@@ -139,32 +143,41 @@ app.post('/auth', function(req, res) {
 app.post('/register',(req,res) => {
     var inputData = {email :req.body.email,password :req.body.psw};
     passwordrep =req.body.pswrepeat;
-    var sql='SELECT * FROM user WHERE email =?';
-    mysqlConn.query(sql, [inputData.email] ,function (err, data) {
-        if(err) throw err
-        
-        if(data.length>0) {
-            req.flash('error',`email was already exist`);
-            res.redirect("/register");
-        } else if(inputData.password != passwordrep){
-            req.flash('error','Password & Confirm Password is not Matched');
-            res.redirect("/register");
-        } else{
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
-            // save users data into database
-            var sql = 'INSERT INTO user SET ?';
-            mysqlConn.query(sql, inputData, function (err, data) {
-                if (err) throw err;
-                
-                var indata1 ={user_id : data.insertId,role_id : 2};
-                var sql1= 'INSERT INTO user_role SET ?';
-                mysqlConn.query(sql1,indata1);
-                
-            });
-            req.flash('success','Your are successfully registered');
-            res.redirect("/register");
-        }
-    });
+    if (regex.exec(req.body.psw) === null) {
+            
+        req.flash('error', 'invalid password! ');
+        res.redirect('/register')
+    }else{
+        var sql='SELECT * FROM user WHERE email =?';
+        mysqlConn.query(sql, [inputData.email] ,function (err, data) {
+            if(err) throw err
+            
+            if(data.length>0) {
+                req.flash('error',`email was already exist`);
+                res.redirect("/register");
+            } else if(inputData.password != passwordrep){
+                req.flash('error','Password & Confirm Password is not Matched');
+                res.redirect("/register");
+            } else{
+
+                // save users data into database
+                var sql = 'INSERT INTO user SET ?';
+                mysqlConn.query(sql, inputData, function (err, data) {
+                    if (err) throw err;
+                    
+                    var indata1 ={user_id : data.insertId,role_id : 2};
+                    var sql1= 'INSERT INTO user_role SET ?';
+                    mysqlConn.query(sql1,indata1);
+                    
+                });
+                req.flash('success','Your are successfully registered');
+                res.redirect("/register");
+            }
+        });
+    }
+    
     
 });
 
@@ -246,12 +259,11 @@ app.get('/add',(req, res) => {
 /**
  * save employee data
  */
-app.post('/save',check('form-group').notEmpty()
-                ,(req, res) => {
+app.post('/save',(req, res) => {
     const errors = validationResult(req);
     console.log(errors.mapped() +"helloooooooooo");
     if (errors.isEmpty()) {
-        let data = {emp_name: req.body.name, emp_salary: req.body.salary,emp_city: req.body.city};
+        let data = {emp_name: req.body.name, emp_salary: req.body.salary,emp_city: req.body.city, user_id: req.session.userId};
         let sql = "INSERT INTO employee SET ?";
         let query = mysqlConn.query(sql, data,(err, results) => {
             if(err) throw err;
@@ -348,9 +360,8 @@ app.get('/admin',(req, res) => {
 /** all logdin user */
 
 app.get('/loginUser',(req,res) =>{
-    console.log(req.session);
     if (req.session.role == 'ADMIN' && req.session.loggedin){
-        let sql = "SELECT * FROM user";
+        let sql = "SELECT u.id,u.email,u.status, COUNT(emp.user_id) AS NumberOfEmployee FROM user as u Left JOIN employee as emp ON u.id = emp.user_id group by id order by NumberOfEmployee DESC";
         let query = mysqlConn.query(sql, (err, rows) => {
             if(err) throw err;
             render('loginUser', {
@@ -396,3 +407,39 @@ app.post('/saveStatus',(req, res) => {
         res.redirect('/loginUser');
     });
 });
+
+/**
+ * 
+ * addByadmin user 
+ * 
+ */
+app.get('/addUser',(req,res) =>{
+    if (req.session.role == 'ADMIN' && req.session.loggedin){
+    render('addByAdmin',{
+        title : 'CRUD Operation using NodeJS'
+    },req,res)
+}
+});
+
+/**save user by admin */
+
+app.post('/userByAdmin',(req,res) =>{
+    var inputData = {email :req.body.email,password :req.body.password,status:req.body.status};
+    let username = req.body.email;
+    let password = req.body.password;
+    console.log(username +"hiii" + " " + password);
+    mysqlConn.query('SELECT * FROM user WHERE email = ? ', username,(err,rows)=>{
+        if (rows.length > 0) {
+            req.flash('error', 'all ready register email id')
+            res.redirect('/addUser')
+        }else {
+            mysqlConn.query('insert into user set ?',inputData,(err,data)=>{
+                req.flash('success', 'data inserted');
+            res.redirect('/loginUser')
+            });
+            
+        }
+        
+
+    })
+}) 

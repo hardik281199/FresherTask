@@ -1,0 +1,28 @@
+<%- include("./partials/header") %>
+
+  <div class="container">
+    <!-- <h2><%= title %></h2>
+     -->
+    <form action="/userByAdmin" method="post">
+      <div class="form-group">
+        <label for="emp_name">UserName:</label>
+        <input type="email" class="form-control" id="emp_name" placeholder="Enter Name" name="email" >
+      </div>
+      <div class="form-group">
+        <label for="emp_salary">password:</label>
+        <input type="password" class="form-control" id="password" placeholder="Enter password" name="password" >
+      </div>
+      
+      <div class="form-group">
+        <select class="form-select" aria-label="Default select example" name="status">
+            <option selected>Open this select menu</option>
+            <option value="true">true</option>
+            <option value="false">false</option>
+            
+          </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+  </div>
+   
+<%- include("./partials/footer") %>
